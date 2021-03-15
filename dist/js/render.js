@@ -1,0 +1,1 @@
+!function(l,m){m.render=function(n){var i,e,a;i=n.image,(e=new Image).src=i,e.onload=function(){l(".img-box img").attr("src",i),m.blurImg(e,l("body"))},a=n,l(".song-name").html(a.song),l(".singer-name").html(a.singer),l(".album-name").html(a.album),n.isLike?l(".like").addClass("liking"):l(".like").removeClass("liking")}}(window.Zepto,window.player||(window.player={}));
