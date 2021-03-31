@@ -1,33 +1,33 @@
-//信息+图片渲染到页面上
-(function ($,root) {
+(function($,root){
+    var $scope = $(document.body);
+    console.log(root)
+    //渲染当前这首歌的信息
+    function renderInfo(info){
+        var html = '<div class="song-name">'+info.song+'</div>'+
+        '<div class="singer-name">'+info.singer+'</div>'+
+        '<div class="album-name">'+info.album+'</div>';
+        $scope.find(".song-info").html(html)
+    }
+    //渲染当前这首歌的图片
     function renderImg(src){
         var img = new Image();
-        img.src = src;
         img.onload = function(){
-            $('.img-box img').attr('src',src);
-            root.blurImg(img,$('body'));
-
+            root.blurImg(img,$scope);
+            $scope.find(".song-img img").attr("src",src)
         }
+        img.src = src;
     }
-    function renderInfo(info){
-        $('.song-name').html(info.song);
-        $('.singer-name').html(info.singer);
-        $('.album-name').html(info.album);
-    }
-    function renderIsLike(like){
-        if(like){
-            $('.like').addClass('liking')
+    function renderIsLike(isLike){
+        if(isLike){
+            $scope.find(".like-btn").addClass("liking");
         }else{
-            $('.like').removeClass('liking')
+            $scope.find(".like-btn").removeClass("liking");
+            
         }
     }
-
     root.render = function(data){
-        renderImg(data.image);
         renderInfo(data);
-        renderIsLike(data.isLike);
+        renderImg(data.image);
+        renderIsLike(data.isLike)
     }
-    
-
-})(window.Zepto, window.player || (window.player = {}));
-
+})(window.Zepto,window.player || (window.player = {}))

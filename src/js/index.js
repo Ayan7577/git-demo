@@ -1,152 +1,90 @@
+var $ = window.Zepto;
 var root = window.player;
-var dataList;
-var len;
-var audio = root.AudioManager;
-var control;
-var timer;
-var i
-function getData(url) {
-    $.ajax({
-        type: "GET",
-        url: url,
-        success: function (data) {
-            len = data.length;
-            control = new root.controlIndex(len);
-            dataList = data;
-            bindEvent();
-            bindTouch();
-            changeLoad(0);
-        },
-        error: function () {
-            console.log("error");
-        }
-    })
-}
-
-function bindEvent() {
-    $('.prev').on('click', function () {
-        i = control.prev();
-        changeLoad(i);
-        root.pro.start(0);
-        if (audio.status == 'pause') {
-            root.pro.stop();
-        }
-    })
-    $('.next').on('click', function () {
-        i = control.next();
-        changeLoad(i);
-        root.pro.start(0);
-        if (audio.status == 'pause') {
-            root.pro.stop();
-        }
-    })
-    $('.play').on('click', function () {
-        if (audio.status == 'pause') {
+var $scope = $(document.body);
+var songList;
+var controlmanager;
+var audio = new root.audioManager();
+function bindClick(){
+    $scope.on("play:change",function(event,index,flag){
+        audio.setAudioSource(songList[index].audio);
+        if(audio.status == "play"||flag){
             audio.play();
-            root.pro.start();
-            var deg = $('.img-box').attr('data-deg');
-            // console.log(deg);
-            rotated(deg);
-        } else {
+            root.processor.start();
+        }
+        root.processor.renderAllTime(songList[index].duration)
+        root.render(songList[index]);
+        root.processor.updata(0);
+    })
+    //移动端click有300ms延迟
+    $scope.on("click",".prev-btn",function(){
+        var index = controlmanager.prev();
+        $scope.trigger("play:change",index);
+    })
+    $scope.on("click",".next-btn",function(){
+        var index = controlmanager.next();
+        $scope.trigger("play:change",index);
+    })
+    $scope.on("click",".play-btn",function(){
+        if(audio.status == "play"){
             audio.pause();
-            root.pro.stop();
-            clearInterval(timer);
-        }
-        $('.play').toggleClass('playing');
-    })
-    $('.like').on('click', function () {
-        // console.log(1);
-        if (dataList[control.index].isLike) {
-            dataList[control.index].isLike = false;
-        } else {
-            dataList[control.index].isLike = true;
-        }
-        root.render(dataList[control.index]);
-    })
-    $('body').on('click', function () {
-        $('.list-wrap').css({
-            'display': 'none'
-        })
-        
-    })
-    $('.list').on('click', function () {
-        $('.list-wrap').css({
-            'display': 'block'
-        })
-        root.list.shwoList(dataList);
-        return false;
-    })
-}
-
-function changeLoad(i) {
-    clearInterval(timer);
-    $('.img-box').attr('data-deg', 0);
-    $('.img-box').css({
-        'transform': 'rotateZ(0deg)',
-        'transition': 'none'
-    })
-    audio.getAudio(dataList[i].audio);
-    root.render(dataList[i]);
-    root.pro.renderAllTime(dataList[i].duration);
-    if (audio.status == 'play') {
-        audio.play();
-        rotated();
-    }
-
-}
-
-function bindTouch() {
-    var bottom = $('.pro-bottom').offset();
-    var l = bottom.left;
-    var w = bottom.width;
-    var $spot = $('.spot');
-    $spot.on('touchstart', function () {
-        root.pro.stop();
-    }).on('touchmove', function (e) {
-        // console.log(e);
-        var x = e.changedTouches[0].clientX;
-        var per = (x - l) / w;
-        if (per >= 0 && per <= 1) {
-            root.pro.update(per);
-        }
-    }).on('touchend', function (e) {
-        var x = e.changedTouches[0].clientX;
-        var per = (x - l) / w;
-        if (per >= 0 && per <= 1) {
-            root.pro.start(per);
-            console.log(dataList);
-            var time = per * dataList[control.index].duration;
-            audio.playTo(time);
+            root.processor.stop();
+        }else{
+            root.processor.start();
             audio.play();
-            audio.status = 'paly';
-            $('.play').addClass('playing');
+        }
+        $(this).toggleClass("playing");
+    })
+    $scope.on("click",".list-btn",function(){
+        root.playList.show(controlmanager);
+    })
+}
+function bindTouch(){
+    var $slidePoint = $scope.find(".slider-point");
+    var offset = $scope.find(".pro-wrapper").offset();
+    var left = offset.left;
+    var width = offset.width;
+    //绑定拖拽事件 开始拖拽 ： 取消进度条渲染
+    $slidePoint.on("touchstart",function(){
+        root.processor.stop();
+    }).on("touchmove",function(e){
+        //计算拖拽的百分比 更新我们的当前时间和进度条
+        var x = e.changedTouches[0].clientX;
+        var percent = (x - left) / width;
+        if(percent > 1 || percent < 0){
+            percent = 0;
+        }
+        root.processor.updata(percent)
+    }).on("touchend",function(e){
+        //计算百分百 跳转播放 重新开始进度条渲染 
+        var x = e.changedTouches[0].clientX;
+        var percent = (x - left) / width;
+        if(percent > 1 || percent < 0){
+            percent = 0;
+        }
+        var curDuration = songList[controlmanager.index].duration;
+        var curTime = curDuration * percent;
+        audio.jumpToplay(curTime);
+        root.processor.start(percent);
+        $scope.find(".play-btn").addClass("playing");
+    })
+}
+function getData(url){
+    $.ajax({
+        type : "GET",
+        url : url,
+        success : function(data){
+            bindClick();
+            bindTouch();
+            root.playList.renderList(data);
+            controlmanager = new root.controlManager(data.length);
+            songList = data;
+            $scope.trigger("play:change",0);
+            
+        },
+        error : function(){
+            console.log("error")
         }
     })
 }
 
-function rotated(deg) {
-    if (!deg) {
-        deg = 0;
-    }
-    deg = +deg;
-    clearInterval(timer);
-    // var deg = 0;
-    timer = setInterval(function () {
-        deg += 1;
-        $('.img-box').attr('data-deg', deg);
-        $('.img-box').css({
-            'transform': 'rotateZ(' + deg + 'deg)',
-            'transition': 'all 1s ease-out'
-        })
-    }, 100);
-}
-
-
-getData("../mock/data.json");
-
-//render 信息+图片渲染到页面上
-// 点击按钮
-// 音频的播放与暂停 切割
-// 进度条运动 与 拖拽
-// 图片旋转
-// 列表切歌
+getData("../mock/data.json")
