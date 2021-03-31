@@ -51,9 +51,15 @@ gulp.task("html", function () {
 })
 
 gulp.task("image", function () {
-    gulp.src(folder.src + "image/*")
+    gulp.src(folder.src + "images/*")
         .pipe(imageMin())
-        .pipe(gulp.dest(folder.dist + "image/"))
+        .pipe(gulp.dest(folder.dist + "images/"))
+})
+// 歌曲专辑图片
+gulp.task("image", function () {
+    gulp.src("source/*")
+        .pipe(imageMin())
+        .pipe(gulp.dest(folder.dist + "source/"))
 })
 
 gulp.task("css", function () {
