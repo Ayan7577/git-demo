@@ -1,6 +1,6 @@
 [
     {
-        "image": "/dist/html/source/song_1.jpg",
+        "image": "./source/song_1.jpg",
         "audio": "/dist/html/source/song_1.mp3",
         "song": "丑八怪",
         "album": "意外",
